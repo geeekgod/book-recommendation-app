@@ -1,2 +1,5 @@
 flask-server/
 .env
+
+# ignore pycache wherever it is
+**/__pycache__/
