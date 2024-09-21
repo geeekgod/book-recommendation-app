@@ -2,35 +2,46 @@ import axios from "axios";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, LogIn } from "lucide-react";
-import { useAuth } from "../hooks";
 
-const LoginPage = () => {
-  const { setAccessToken } = useAuth();
+const RegisterPage = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordConfirmation, setPasswordConfirmation] = useState("");
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showPasswordConfirmation, setShowPasswordConfirmation] =
+    useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
     setError("");
 
+    if (password !== passwordConfirmation) {
+      setError("Passwords do not match");
+      return;
+    }
+
     try {
       setIsLoading(true);
-      const response = await axios.post("/login", { username, password });
-      const { access_token } = response.data;
-      setAccessToken(access_token);
-
-      setTimeout(() => {
-        navigate("/", {
-          replace: true,
-        });
-      }, 1000);
+      const response = await axios.post("/register", { username, password });
+      if (response.status === 201) {
+        setTimeout(() => {
+          navigate("/login", {
+            replace: true,
+          });
+        }, 1000);
+      }
     } catch (err) {
       console.error("There was an error logging in:", err);
-      setError("Invalid username or password");
+      if (
+        err.response &&
+        err.response.data &&
+        err.response.data.message === "Username already exists"
+      )
+        setError(err.response.data.message);
+      else setError("Error while registering");
     } finally {
       setIsLoading(false);
     }
@@ -41,10 +52,10 @@ const LoginPage = () => {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to your account
+            Create a new account
           </h2>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleLogin}>
+        <form className="mt-8 space-y-6" onSubmit={handleRegister}>
           <input type="hidden" name="remember" value="true" />
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
@@ -71,7 +82,7 @@ const LoginPage = () => {
                 name="password"
                 type={showPassword ? "text" : "password"}
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-600 focus:border-blue-600 focus:z-10 sm:text-sm"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-600 focus:border-blue-600 focus:z-10 sm:text-sm"
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -82,6 +93,34 @@ const LoginPage = () => {
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? (
+                  <EyeOff className="h-5 w-5 text-gray-400" />
+                ) : (
+                  <Eye className="h-5 w-5 text-gray-400" />
+                )}
+              </button>
+            </div>
+            <div className="relative">
+              <label htmlFor="password" className="sr-only">
+                Password
+              </label>
+              <input
+                id="password"
+                name="password"
+                type={showPasswordConfirmation ? "text" : "password"}
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-600 focus:border-blue-600 focus:z-10 sm:text-sm"
+                placeholder="Confirm Password"
+                value={passwordConfirmation}
+                onChange={(e) => setPasswordConfirmation(e.target.value)}
+              />
+              <button
+                type="button"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                onClick={() =>
+                  setShowPasswordConfirmation(!showPasswordConfirmation)
+                }
+              >
+                {showPasswordConfirmation ? (
                   <EyeOff className="h-5 w-5 text-gray-400" />
                 ) : (
                   <Eye className="h-5 w-5 text-gray-400" />
@@ -106,16 +145,16 @@ const LoginPage = () => {
                   aria-hidden="true"
                 />
               </span>
-              {isLoading ? "Loading..." : "Sign in"}
+              {isLoading ? "Loading..." : "Sign Up"}
             </button>
             <p className="mt-2 text-center text-sm text-gray-600">
-              Don&apos;t have an account?{" "}
+              Already have an account?{" "}
               <Link
-                to="/register"
+                to="/login"
                 replace
                 className="font-medium text-blue-600 hover:text-blue-500"
               >
-                Register
+                Login
               </Link>
             </p>
           </div>
@@ -125,4 +164,4 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage;
+export default RegisterPage;

@@ -3,7 +3,7 @@ import uuid
 from datetime import timedelta
 # Flask imports
 from flask import Flask, jsonify, request
-from flask_jwt_extended import create_access_token, jwt_required, JWTManager
+from flask_jwt_extended import create_access_token, jwt_required, JWTManager, get_jwt_identity
 from flask_cors import CORS, cross_origin
 # Others
 from dotenv import load_dotenv
@@ -21,13 +21,9 @@ jwt_secret = os.getenv("JWT_SECRET") or "super-secret"
 app = Flask(__name__)
 app.config["JWT_SECRET_KEY"] = jwt_secret
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=5)
-# Enable Cors for url
+# Enable Cors
 CORS(app)
 jwt = JWTManager(app)
-
-# TODO: Move this to a database later
-# For now using an in-memory list to store books
-books: list[models.Book] = []
 
 
 @app.route("/ping", methods=["GET"])
@@ -43,9 +39,11 @@ def ping():
 def recommend_book():
     '''Recommend a random book based on the genre using'''
     genre = request.args.get('genre')
+    current_user = get_jwt_identity()
     if genre is None:
         return jsonify({"message": "Genre query parameter is required"}), 400
-    recommended_book = utils.recommend_book(genre, books)
+    books = utils.read_json_file('books.json')
+    recommended_book = utils.recommend_book(genre, books, current_user['id'])
     if recommended_book is None:
         return jsonify({"message": "No books found for the given genre"}), 404
     return jsonify(recommended_book), 200
@@ -57,16 +55,15 @@ def recommend_book():
 def add_book():
     '''Add a new book'''
     try:
-        uid = str(uuid.uuid4())
+        current_user = get_jwt_identity()
         data = request.get_json()
-        book_data = models.Book(**data, id=uid)
-        book = models.Book(
-            id=book_data.id,
-            title=book_data.title,
-            author=book_data.author,
-            genre=book_data.genre)
-        books.append(book)
-        return jsonify(book.dict()), 201
+        books = utils.read_json_file('books.json')
+        new_id = utils.get_next_id(books)
+        book_data = models.Book(
+            id=str(new_id), user_id=current_user['id'], **data)
+        books.append(book_data.dict())
+        utils.write_json_file('books.json', books)
+        return jsonify(book_data.dict()), 201
     except ValidationError as e:
         return jsonify({"errors": e.errors()}), 400
 
@@ -76,8 +73,11 @@ def add_book():
 @cross_origin()
 def get_books():
     '''Get all books'''
-    books_json = [book.dict() for book in books]
-    return jsonify(books_json)
+    current_user = get_jwt_identity()
+    books = utils.read_json_file('books.json')
+    user_books = [book for book in books if book['user_id']
+                  == current_user['id']]
+    return jsonify(user_books)
 
 
 @app.route('/books/<string:id>', methods=['DELETE'])
@@ -85,22 +85,48 @@ def get_books():
 @cross_origin()
 def delete_book(id):
     '''Delete a book by id'''
-    book = next((book for book in books if book.id == id), None)
+    current_user = get_jwt_identity()
+    books = utils.read_json_file('books.json')
+    book = next((book for book in books if book['id'] ==
+                id and book['user_id'] == current_user['id']), None)
     if book is None:
         return jsonify({"message": "Book not found"}), 404
     books.remove(book)
+    utils.write_json_file('books.json', books)
     return jsonify({"message": "Book deleted"}), 200
+
+
+@app.route('/register', methods=['POST'])
+@cross_origin()
+def register():
+    '''Register a new user'''
+    try:
+        data = request.get_json()
+        users = utils.read_json_file('users.json')
+        if any(user['username'] == data['username'] for user in users):
+            return jsonify({"message": "Username already exists"}), 400
+        new_id = utils.get_next_id(users)
+        user_create_data = models.UserCreate(**data)
+        hashed_password = utils.hash_password(user_create_data.password)
+        user_data = models.User(
+            id=str(new_id), username=user_create_data.username, password=hashed_password)
+        users.append(user_data.dict())
+        utils.write_json_file('users.json', users)
+        return jsonify({"message": "User registered successfully"}), 201
+    except ValidationError as e:
+        return jsonify({"errors": e.errors()}), 400
 
 
 @app.route('/login', methods=['POST'])
 @cross_origin()
 def login():
     '''Login API'''
-    # TODO: Implement a proper authentication mechanism here
-    # For now using a hardcoded username and password
     username = request.json.get('username', None)
     password = request.json.get('password', None)
-    if username == 'user' and password == 'password':
-        access_token = create_access_token(identity={'username': username})
+    users = utils.read_json_file('users.json')
+    user = next((user for user in users if user['username'] == username), None)
+    if user and utils.verify_password(user['password'], password):
+        access_token = create_access_token(
+            identity={'id': user['id'], 'username': user['username']})
         return jsonify(access_token=access_token)
     return jsonify({"msg": "Bad username or password"}), 401

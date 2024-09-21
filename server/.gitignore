@@ -3,3 +3,9 @@ flask-server/
 
 # ignore pycache wherever it is
 **/__pycache__/
+
+# ignore logs
+logs/
+
+# ignore db
+db/

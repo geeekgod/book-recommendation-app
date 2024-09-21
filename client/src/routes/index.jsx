@@ -4,9 +4,10 @@ import {
   Routes,
   Navigate,
 } from "react-router-dom";
-import LoginPage from "../pages/login";
-import HomePage from "../pages/home";
 import { useAuth } from "../hooks";
+import LoginPage from "../pages/login";
+import RegisterPage from "../pages/register";
+import HomePage from "../pages/home";
 
 const AppRouter = () => {
   const { isLoggedIn } = useAuth();
@@ -16,6 +17,10 @@ const AppRouter = () => {
         <Route
           path="/login"
           element={isLoggedIn ? <Navigate to="/" replace /> : <LoginPage />}
+        />
+        <Route
+          path="/register"
+          element={isLoggedIn ? <Navigate to="/" replace /> : <RegisterPage />}
         />
         <Route
           path="/"

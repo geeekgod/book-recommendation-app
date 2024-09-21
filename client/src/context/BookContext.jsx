@@ -69,11 +69,19 @@ export const BookContextProvider = ({ children }) => {
   };
 
   useEffect(() => {
+    // Fetch books when user logs in
     if (isLoggedIn) fetchBooks();
+    // Fetch books every 20 seconds
     const fetchBooksInterval = setInterval(async () => {
       if (isLoggedIn) await fetchBooks();
     }, 20000);
+    // Clear books and recommendation when user logs out
+    if (!isLoggedIn) {
+      setBooks([]);
+      setRecommendation(null);
+    }
 
+    // Clear interval when Context unmounts
     return () => clearInterval(fetchBooksInterval);
   }, [isLoggedIn]);
 
