@@ -1,9 +1,14 @@
-from src.routes import app
+"""
+Entry point of the Flask API
+"""
+
 import logging
+from src.routes import app
 from src.utils import read_json_file, write_json_file
 
 
 def init_db():
+    """Initialize Data Stores """
     if not read_json_file('books.json'):
         write_json_file('books.json', [])
     if not read_json_file('users.json'):

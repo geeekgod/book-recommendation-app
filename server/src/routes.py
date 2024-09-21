@@ -1,5 +1,7 @@
+"""
+Flask App & Routes
+"""
 import os
-import uuid
 from datetime import timedelta
 # Flask imports
 from flask import Flask, jsonify, request
@@ -9,8 +11,8 @@ from flask_cors import CORS, cross_origin
 from dotenv import load_dotenv
 from pydantic import ValidationError
 # Local imports
-import src.models as models
-import src.utils as utils
+from src import models
+from src import utils
 
 # load .env file
 load_dotenv()
@@ -83,12 +85,12 @@ def get_books():
 @app.route('/books/<string:id>', methods=['DELETE'])
 @jwt_required()
 @cross_origin()
-def delete_book(id):
+def delete_book(book_id):
     '''Delete a book by id'''
     current_user = get_jwt_identity()
     books = utils.read_json_file('books.json')
     book = next((book for book in books if book['id'] ==
-                id and book['user_id'] == current_user['id']), None)
+                book_id and book['user_id'] == current_user['id']), None)
     if book is None:
         return jsonify({"message": "Book not found"}), 404
     books.remove(book)
