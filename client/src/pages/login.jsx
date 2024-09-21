@@ -2,8 +2,10 @@ import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, LogIn } from "lucide-react";
+import { useAuth } from "../hooks";
 
 const LoginPage = () => {
+  const { setAccessToken } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -19,13 +21,12 @@ const LoginPage = () => {
       setIsLoading(true);
       const response = await axios.post("/login", { username, password });
       const { access_token } = response.data;
-      localStorage.setItem("token", access_token);
+      setAccessToken(access_token);
+
       setTimeout(() => {
-        // TODO: Redirect to the home page using the navigate function
-        // navigate("/", {
-        //   replace: true,
-        // }),
-        window.location.href = "/";
+        navigate("/", {
+          replace: true,
+        });
       }, 1000);
     } catch (err) {
       console.error("There was an error logging in:", err);

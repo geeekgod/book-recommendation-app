@@ -4,6 +4,7 @@ import axios from "axios";
 axios.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
+    config.headers["Content-Type"] = "application/json";
     if (token) {
       config.headers["Authorization"] = `Bearer ${token}`;
     }
@@ -14,4 +15,5 @@ axios.interceptors.request.use(
   }
 );
 
+// TODO: ship baseUrl to ENV
 axios.defaults.baseURL = "http://localhost:8080";

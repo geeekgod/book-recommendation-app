@@ -6,30 +6,20 @@ import {
 } from "react-router-dom";
 import LoginPage from "../pages/login";
 import HomePage from "../pages/home";
+import { useAuth } from "../hooks";
 
 const AppRouter = () => {
+  const { isLoggedIn } = useAuth();
   return (
     <Router>
       <Routes>
         <Route
           path="/login"
-          element={
-            localStorage.getItem("token") ? (
-              <Navigate to="/" replace />
-            ) : (
-              <LoginPage />
-            )
-          }
+          element={isLoggedIn ? <Navigate to="/" replace /> : <LoginPage />}
         />
         <Route
           path="/"
-          element={
-            localStorage.getItem("token") ? (
-              <HomePage />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
+          element={isLoggedIn ? <HomePage /> : <Navigate to="/login" replace />}
         />
       </Routes>
     </Router>

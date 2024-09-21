@@ -1,18 +1,28 @@
-import { Plus } from "lucide-react";
-import PropTypes from "prop-types";
 import { useState } from "react";
+import { Plus } from "lucide-react";
+import { useBook } from "../hooks";
 
-const AddBookForm = ({ onAdd }) => {
+const AddBookForm = () => {
+  const { addBook } = useBook();
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
   const [genre, setGenre] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleAddBook = async (book) => {
+    await addBook(book);
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onAdd({ title, author, genre });
-    setTitle("");
-    setAuthor("");
-    setGenre("");
+    try {
+      await handleAddBook({ title, author, genre });
+    } catch (error) {
+      console.error("Error while submitting Add Book Form: ", error);
+    } finally {
+      setTitle("");
+      setAuthor("");
+      setGenre("");
+    }
   };
 
   return (
@@ -50,10 +60,6 @@ const AddBookForm = ({ onAdd }) => {
       </button>
     </form>
   );
-};
-
-AddBookForm.propTypes = {
-  onAdd: PropTypes.func.isRequired,
 };
 
 export default AddBookForm;

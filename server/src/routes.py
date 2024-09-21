@@ -22,8 +22,7 @@ app = Flask(__name__)
 app.config["JWT_SECRET_KEY"] = jwt_secret
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=5)
 # Enable Cors for url
-whitelist = ['http://localhost:5173']
-CORS(app, resources={r"/api/*": {"origins": whitelist}})
+CORS(app)
 jwt = JWTManager(app)
 
 # TODO: Move this to a database later
