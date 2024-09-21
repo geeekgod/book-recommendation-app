@@ -1,5 +1,9 @@
 import axios from "axios";
 
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+
+if (!apiBaseUrl) throw new Error("VITE_API_BASE_URL is missing!");
+
 // Set up axios to use the token for all requests
 axios.interceptors.request.use(
   (config) => {
@@ -15,5 +19,4 @@ axios.interceptors.request.use(
   }
 );
 
-// TODO: ship baseUrl to ENV
-axios.defaults.baseURL = "http://localhost:8080";
+axios.defaults.baseURL = apiBaseUrl;
