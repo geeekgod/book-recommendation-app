@@ -1,8 +1,11 @@
 import os
 import uuid
 from datetime import timedelta
+# Flask imports
 from flask import Flask, jsonify, request
 from flask_jwt_extended import create_access_token, jwt_required, JWTManager
+from flask_cors import CORS, cross_origin
+# Others
 from dotenv import load_dotenv
 from pydantic import ValidationError
 # Local imports
@@ -18,6 +21,9 @@ jwt_secret = os.getenv("JWT_SECRET") or "super-secret"
 app = Flask(__name__)
 app.config["JWT_SECRET_KEY"] = jwt_secret
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=5)
+# Enable Cors for url
+whitelist = ['http://localhost:5173']
+CORS(app, resources={r"/api/*": {"origins": whitelist}})
 jwt = JWTManager(app)
 
 # TODO: Move this to a database later
@@ -26,6 +32,7 @@ books: list[models.Book] = []
 
 
 @app.route("/ping", methods=["GET"])
+@cross_origin()
 def ping():
     '''Health check API'''
     return jsonify({"message": "pong"})
@@ -33,6 +40,7 @@ def ping():
 
 @app.route('/books/recommend', methods=['GET'])
 @jwt_required()
+@cross_origin()
 def recommend_book():
     '''Recommend a random book based on the genre using'''
     genre = request.args.get('genre')
@@ -46,6 +54,7 @@ def recommend_book():
 
 @app.route('/books', methods=['POST'])
 @jwt_required()
+@cross_origin()
 def add_book():
     '''Add a new book'''
     try:
@@ -65,6 +74,7 @@ def add_book():
 
 @app.route('/books', methods=['GET'])
 @jwt_required()
+@cross_origin()
 def get_books():
     '''Get all books'''
     books_json = [book.dict() for book in books]
@@ -73,6 +83,7 @@ def get_books():
 
 @app.route('/books/<string:id>', methods=['DELETE'])
 @jwt_required()
+@cross_origin()
 def delete_book(id):
     '''Delete a book by id'''
     book = next((book for book in books if book.id == id), None)
@@ -83,6 +94,7 @@ def delete_book(id):
 
 
 @app.route('/login', methods=['POST'])
+@cross_origin()
 def login():
     '''Login API'''
     # TODO: Implement a proper authentication mechanism here
