@@ -1,6 +1,6 @@
 import axios from "axios";
 import PropTypes from "prop-types";
-import { createContext, useEffect, useState } from "react";
+import { createContext, useCallback, useEffect, useState } from "react";
 import { useAuth } from "../hooks";
 
 export const BookContext = createContext({});
@@ -10,7 +10,7 @@ export const BookContextProvider = ({ children }) => {
   const [books, setBooks] = useState([]);
   const [recommendation, setRecommendation] = useState(null);
 
-  const fetchBooks = async () => {
+  const fetchBooks = useCallback(async () => {
     try {
       const response = await axios.get("/books");
       if (response.status === 200 && response.data) setBooks(response.data);
@@ -19,7 +19,7 @@ export const BookContextProvider = ({ children }) => {
       if (error.response && error.response.status === 401) logOut();
       else console.error("Failed to fetch books:", error);
     }
-  };
+  }, [logOut]);
 
   const addBook = async (book) => {
     try {
@@ -83,7 +83,7 @@ export const BookContextProvider = ({ children }) => {
 
     // Clear interval when Context unmounts
     return () => clearInterval(fetchBooksInterval);
-  }, [isLoggedIn]);
+  }, [isLoggedIn, fetchBooks]);
 
   return (
     <BookContext.Provider
